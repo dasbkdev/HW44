@@ -1,15 +1,9 @@
 package kg.attractor.java;
 
-import kg.attractor.java.lesson44.Lesson44Server;
-
-import java.io.IOException;
+import kg.attractor.java.server.Lesson44Server;
 
 public class Main {
-    public static void main(String[] args) {
-        try {
-            new Lesson44Server("localhost", 9889).start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public static void main(String[] args) throws Exception {
+        new Lesson44Server().start();
     }
 }
