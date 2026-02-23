@@ -4,6 +4,7 @@ import kg.attractor.java.model.Book;
 import kg.attractor.java.model.Employee;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class LibraryService {
@@ -13,8 +14,8 @@ public class LibraryService {
 
     public LibraryService() {
         employees = new ArrayList<>();
-        employees.add(new Employee(1, "Ivan Ivanov"));
-        employees.add(new Employee(2, "Petr Petrov"));
+        employees.add(new Employee(1, "Ivan Ivanov", Arrays.asList(2), Arrays.asList(1)));
+        employees.add(new Employee(2, "Petr Petrov", Arrays.asList(3), Arrays.asList()));
 
         books = new ArrayList<>();
         books.add(new Book(1, "Java Basics", "James Gosling", "images/1.jpg", "available", null));
@@ -29,6 +30,17 @@ public class LibraryService {
     public Book getBookById(int id) {
         for (Book book : books) {
             if (book.getId() == id) return book;
+        }
+        return null;
+    }
+
+    public List<Employee> getEmployees() {
+        return employees;
+    }
+
+    public Employee getEmployeeById(int id) {
+        for (Employee employee : employees) {
+            if (employee.getId() == id) return employee;
         }
         return null;
     }

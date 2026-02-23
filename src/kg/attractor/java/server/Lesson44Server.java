@@ -26,6 +26,8 @@ public class Lesson44Server {
     private void registerRoutes() {
         server.registerGet("/books", this::handleBooks);
         server.registerGet("/book", this::handleBook);
+        server.registerGet("/employees", this::handleEmployees);
+        server.registerGet("/employee", this::handleEmployee);
     }
 
     private void handleBooks(HttpExchange exchange) throws IOException {
@@ -58,4 +60,21 @@ public class Lesson44Server {
         }
         return null;
     }
+
+    private void handleEmployees(HttpExchange exchange) throws IOException {
+        Map<String, Object> data = new HashMap<>();
+        data.put("employees", libraryService.getEmployees());
+        server.renderTemplate(exchange, "employees.ftl", data);
+    }
+
+    private void handleEmployee(HttpExchange exchange) throws IOException {
+        String idStr = getQueryParam(exchange, "id");
+        int id = idStr == null ? 1 : Integer.parseInt(idStr);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("employee", libraryService.getEmployeeById(id));
+        data.put("library", libraryService);
+        server.renderTemplate(exchange, "employee.ftl", data);
+    }
+
 }
