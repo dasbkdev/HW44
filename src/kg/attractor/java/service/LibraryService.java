@@ -13,6 +13,7 @@ public class LibraryService {
     private int nextUserId = 1;
     private final List<Employee> employees;
     private final List<Book> books;
+    private kg.attractor.java.model.Employee lastLoggedInUser;
 
     public LibraryService() {
         employees = new ArrayList<>();
@@ -66,6 +67,22 @@ public class LibraryService {
 
         users.add(new kg.attractor.java.model.Employee(nextUserId++, identifier, fullName, password));
         return true;
+    }
+
+    public kg.attractor.java.model.Employee login(String identifier, String password) {
+        if (identifier == null || password == null) return null;
+
+        for (kg.attractor.java.model.Employee user : users) {
+            if (identifier.equalsIgnoreCase(user.getIdentifier()) && password.equals(user.getPassword())) {
+                lastLoggedInUser = user;
+                return user;
+            }
+        }
+        return null;
+    }
+
+    public kg.attractor.java.model.Employee getLastLoggedInUser() {
+        return lastLoggedInUser;
     }
 
 }

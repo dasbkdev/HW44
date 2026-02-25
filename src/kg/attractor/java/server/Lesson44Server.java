@@ -30,6 +30,9 @@ public class Lesson44Server {
         server.registerGet("/employee", this::handleEmployee);
         server.registerGet("/register", this::handleRegisterGet);
         server.registerPost("/register", this::handleRegisterPost);
+        server.registerGet("/login", this::handleLoginGet);
+        server.registerPost("/login", this::handleLoginPost);
+        server.registerGet("/profile", this::handleProfileGet);
     }
 
     private void handleBooks(HttpExchange exchange) throws IOException {
@@ -98,6 +101,44 @@ public class Lesson44Server {
         data.put("fullName", fullName == null ? "" : fullName);
 
         server.renderTemplate(exchange, "register_result.ftl", data);
+    }
+
+    private void handleLoginGet(com.sun.net.httpserver.HttpExchange exchange) throws java.io.IOException {
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("error", "");
+        server.renderTemplate(exchange, "login.ftl", data);
+    }
+
+    private void handleLoginPost(com.sun.net.httpserver.HttpExchange exchange) throws java.io.IOException {
+        java.util.Map<String, String> form = server.getFormData(exchange);
+
+        String identifier = form.get("identifier");
+        String password = form.get("password");
+
+        var user = libraryService.login(identifier, password);
+
+        if (user == null) {
+            java.util.Map<String, Object> data = new java.util.HashMap<>();
+            data.put("error", "User does not exist or wrong password");
+            server.renderTemplate(exchange, "login.ftl", data);
+            return;
+        }
+
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("user", user);
+        server.renderTemplate(exchange, "profile.ftl", data);
+    }
+
+    private void handleProfileGet(com.sun.net.httpserver.HttpExchange exchange) throws java.io.IOException {
+        var user = libraryService.getLastLoggedInUser();
+
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        if (user == null) {
+            data.put("user", new kg.attractor.java.model.Employee(0, "unknown@user", "Some user", ""));
+        } else {
+            data.put("user", user);
+        }
+        server.renderTemplate(exchange, "profile.ftl", data);
     }
 
 }
