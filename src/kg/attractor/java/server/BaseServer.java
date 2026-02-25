@@ -49,6 +49,10 @@ public class BaseServer {
         routes.put(makeKey("GET", path), handler);
     }
 
+    public void registerPost(String path, RouteHandler handler) {
+        routes.put(makeKey("POST", path), handler);
+    }
+
     public void renderTemplate(HttpExchange exchange, String templateFile, Object dataModel) throws IOException {
         try {
             Template temp = freemarker.getTemplate(templateFile);
@@ -152,4 +156,32 @@ public class BaseServer {
             throw new RuntimeException(e);
         }
     }
+
+    public java.util.Map<String, String> getFormData(com.sun.net.httpserver.HttpExchange exchange) throws java.io.IOException {
+        String body = new String(exchange.getRequestBody().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        return parseQuery(body);
+    }
+
+    private java.util.Map<String, String> parseQuery(String query) {
+        java.util.Map<String, String> data = new java.util.HashMap<>();
+        if (query == null || query.isEmpty()) return data;
+
+        String[] parts = query.split("&");
+        for (String part : parts) {
+            String[] kv = part.split("=", 2);
+            String key = urlDecode(kv[0]);
+            String value = kv.length > 1 ? urlDecode(kv[1]) : "";
+            data.put(key, value);
+        }
+        return data;
+    }
+
+    private String urlDecode(String s) {
+        try {
+            return java.net.URLDecoder.decode(s, java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return s;
+        }
+    }
+
 }

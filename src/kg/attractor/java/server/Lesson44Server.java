@@ -28,6 +28,8 @@ public class Lesson44Server {
         server.registerGet("/book", this::handleBook);
         server.registerGet("/employees", this::handleEmployees);
         server.registerGet("/employee", this::handleEmployee);
+        server.registerGet("/register", this::handleRegisterGet);
+        server.registerPost("/register", this::handleRegisterPost);
     }
 
     private void handleBooks(HttpExchange exchange) throws IOException {
@@ -75,6 +77,27 @@ public class Lesson44Server {
         data.put("employee", libraryService.getEmployeeById(id));
         data.put("library", libraryService);
         server.renderTemplate(exchange, "employee.ftl", data);
+    }
+    private void handleRegisterGet(com.sun.net.httpserver.HttpExchange exchange) throws java.io.IOException {
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        server.renderTemplate(exchange, "register.ftl", data);
+    }
+
+    private void handleRegisterPost(com.sun.net.httpserver.HttpExchange exchange) throws java.io.IOException {
+        java.util.Map<String, String> form = server.getFormData(exchange);
+
+        String identifier = form.get("identifier");
+        String fullName = form.get("fullName");
+        String password = form.get("password");
+
+        boolean ok = libraryService.registerUser(identifier, fullName, password);
+
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("success", ok);
+        data.put("identifier", identifier == null ? "" : identifier);
+        data.put("fullName", fullName == null ? "" : fullName);
+
+        server.renderTemplate(exchange, "register_result.ftl", data);
     }
 
 }

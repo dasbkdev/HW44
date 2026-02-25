@@ -9,6 +9,8 @@ import java.util.List;
 
 public class LibraryService {
 
+    private final java.util.List<kg.attractor.java.model.Employee> users = new java.util.ArrayList<>();
+    private int nextUserId = 1;
     private final List<Employee> employees;
     private final List<Book> books;
 
@@ -52,4 +54,18 @@ public class LibraryService {
         }
         return "";
     }
+
+    public boolean registerUser(String identifier, String fullName, String password) {
+        if (identifier == null || identifier.isEmpty()) return false;
+        if (fullName == null || fullName.isEmpty()) return false;
+        if (password == null || password.isEmpty()) return false;
+
+        for (kg.attractor.java.model.Employee user : users) {
+            if (identifier.equalsIgnoreCase(user.getIdentifier())) return false;
+        }
+
+        users.add(new kg.attractor.java.model.Employee(nextUserId++, identifier, fullName, password));
+        return true;
+    }
+
 }
