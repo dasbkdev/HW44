@@ -32,7 +32,7 @@ public class Lesson44Server {
         server.registerGet("/return", this::handleReturnGet);
         server.registerGet("/employees", this::handleEmployees);
         server.registerGet("/employee", this::handleEmployee);
-
+        server.registerGet("/logout", this::handleLogoutGet);
         server.registerGet("/register", this::handleRegisterGet);
         server.registerPost("/register", this::handleRegisterPost);
 
@@ -195,5 +195,15 @@ public class Lesson44Server {
         data.put("success", ok);
         data.put("book", libraryService.getBookById(bookId));
         server.renderTemplate(exchange, "return_result.ftl", data);
+    }
+
+    private void handleLogoutGet(HttpExchange exchange) throws IOException {
+        String sessionId = server.getCookie(exchange, SESSION_COOKIE);
+
+        libraryService.removeSession(sessionId);
+        server.deleteCookie(exchange, SESSION_COOKIE);
+
+        Map<String, Object> data = new HashMap<>();
+        server.renderTemplate(exchange, "logout.ftl", data);
     }
 }
