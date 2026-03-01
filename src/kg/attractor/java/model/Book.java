@@ -40,4 +40,12 @@ public class Book {
     public Integer getIssuedToEmployeeId() {
         return issuedToEmployeeId;
     }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void setIssuedToEmployeeId(Integer issuedToEmployeeId) {
+        this.issuedToEmployeeId = issuedToEmployeeId;
+    }
 }

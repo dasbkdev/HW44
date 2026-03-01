@@ -104,4 +104,39 @@ public class LibraryService {
         sessions.remove(sessionId);
     }
 
+    public int countIssuedBooksToUser(int userId) {
+        int count = 0;
+        for (Book book : books) {
+            Integer issuedTo = book.getIssuedToEmployeeId();
+            if (issuedTo != null && issuedTo == userId) count++;
+        }
+        return count;
+    }
+
+    public boolean issueBook(int bookId, int userId) {
+        Book book = getBookById(bookId);
+        if (book == null) return false;
+
+        if (book.getIssuedToEmployeeId() != null) return false;
+
+        if (countIssuedBooksToUser(userId) >= 2) return false;
+
+        book.setIssuedToEmployeeId(userId);
+        book.setStatus("issued");
+        return true;
+    }
+
+    public boolean returnBook(int bookId, int userId) {
+        Book book = getBookById(bookId);
+        if (book == null) return false;
+
+        Integer issuedTo = book.getIssuedToEmployeeId();
+        if (issuedTo == null) return false;
+        if (issuedTo != userId) return false;
+
+        book.setIssuedToEmployeeId(null);
+        book.setStatus("available");
+        return true;
+    }
+
 }

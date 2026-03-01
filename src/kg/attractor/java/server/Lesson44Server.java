@@ -28,7 +28,8 @@ public class Lesson44Server {
     private void registerRoutes() {
         server.registerGet("/books", this::handleBooks);
         server.registerGet("/book", this::handleBook);
-
+        server.registerGet("/issue", this::handleIssueGet);
+        server.registerGet("/return", this::handleReturnGet);
         server.registerGet("/employees", this::handleEmployees);
         server.registerGet("/employee", this::handleEmployee);
 
@@ -150,5 +151,49 @@ public class Lesson44Server {
             if (kv.length == 2 && kv[0].equals(name)) return kv[1];
         }
         return null;
+    }
+
+    private Employee getAuthorizedUser(HttpExchange exchange) {
+        String sessionId = server.getCookie(exchange, SESSION_COOKIE);
+        return libraryService.getUserBySession(sessionId);
+    }
+
+    private void handleIssueGet(HttpExchange exchange) throws IOException {
+        Employee user = getAuthorizedUser(exchange);
+        if (user == null) {
+            Map<String, Object> data = new HashMap<>();
+            server.renderTemplate(exchange, "auth_required.ftl", data);
+            return;
+        }
+
+        String idStr = getQueryParam(exchange, "id");
+        int bookId = idStr == null ? 0 : Integer.parseInt(idStr);
+
+        boolean ok = libraryService.issueBook(bookId, user.getId());
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("success", ok);
+        data.put("book", libraryService.getBookById(bookId));
+        data.put("limitReached", libraryService.countIssuedBooksToUser(user.getId()) >= 2);
+        server.renderTemplate(exchange, "issue_result.ftl", data);
+    }
+
+    private void handleReturnGet(HttpExchange exchange) throws IOException {
+        Employee user = getAuthorizedUser(exchange);
+        if (user == null) {
+            Map<String, Object> data = new HashMap<>();
+            server.renderTemplate(exchange, "auth_required.ftl", data);
+            return;
+        }
+
+        String idStr = getQueryParam(exchange, "id");
+        int bookId = idStr == null ? 0 : Integer.parseInt(idStr);
+
+        boolean ok = libraryService.returnBook(bookId, user.getId());
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("success", ok);
+        data.put("book", libraryService.getBookById(bookId));
+        server.renderTemplate(exchange, "return_result.ftl", data);
     }
 }
