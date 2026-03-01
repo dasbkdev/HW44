@@ -2,6 +2,7 @@ package kg.attractor.java.server;
 
 import com.sun.net.httpserver.HttpExchange;
 import kg.attractor.java.model.Book;
+import kg.attractor.java.model.Employee;
 import kg.attractor.java.service.LibraryService;
 
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.util.Map;
 
 public class Lesson44Server {
 
+    private static final String SESSION_COOKIE = "SESSION_ID";
     private final BaseServer server;
     private final LibraryService libraryService;
 
@@ -26,12 +28,16 @@ public class Lesson44Server {
     private void registerRoutes() {
         server.registerGet("/books", this::handleBooks);
         server.registerGet("/book", this::handleBook);
+
         server.registerGet("/employees", this::handleEmployees);
         server.registerGet("/employee", this::handleEmployee);
+
         server.registerGet("/register", this::handleRegisterGet);
         server.registerPost("/register", this::handleRegisterPost);
+
         server.registerGet("/login", this::handleLoginGet);
         server.registerPost("/login", this::handleLoginPost);
+
         server.registerGet("/profile", this::handleProfileGet);
     }
 
@@ -54,18 +60,6 @@ public class Lesson44Server {
         server.renderTemplate(exchange, "book.ftl", data);
     }
 
-    private String getQueryParam(HttpExchange exchange, String name) {
-        String query = exchange.getRequestURI().getQuery();
-        if (query == null || query.isEmpty()) return null;
-
-        String[] parts = query.split("&");
-        for (String part : parts) {
-            String[] kv = part.split("=");
-            if (kv.length == 2 && kv[0].equals(name)) return kv[1];
-        }
-        return null;
-    }
-
     private void handleEmployees(HttpExchange exchange) throws IOException {
         Map<String, Object> data = new HashMap<>();
         data.put("employees", libraryService.getEmployees());
@@ -81,13 +75,14 @@ public class Lesson44Server {
         data.put("library", libraryService);
         server.renderTemplate(exchange, "employee.ftl", data);
     }
-    private void handleRegisterGet(com.sun.net.httpserver.HttpExchange exchange) throws java.io.IOException {
-        java.util.Map<String, Object> data = new java.util.HashMap<>();
+
+    private void handleRegisterGet(HttpExchange exchange) throws IOException {
+        Map<String, Object> data = new HashMap<>();
         server.renderTemplate(exchange, "register.ftl", data);
     }
 
-    private void handleRegisterPost(com.sun.net.httpserver.HttpExchange exchange) throws java.io.IOException {
-        java.util.Map<String, String> form = server.getFormData(exchange);
+    private void handleRegisterPost(HttpExchange exchange) throws IOException {
+        Map<String, String> form = server.getFormData(exchange);
 
         String identifier = form.get("identifier");
         String fullName = form.get("fullName");
@@ -95,7 +90,7 @@ public class Lesson44Server {
 
         boolean ok = libraryService.registerUser(identifier, fullName, password);
 
-        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        Map<String, Object> data = new HashMap<>();
         data.put("success", ok);
         data.put("identifier", identifier == null ? "" : identifier);
         data.put("fullName", fullName == null ? "" : fullName);
@@ -103,42 +98,57 @@ public class Lesson44Server {
         server.renderTemplate(exchange, "register_result.ftl", data);
     }
 
-    private void handleLoginGet(com.sun.net.httpserver.HttpExchange exchange) throws java.io.IOException {
-        java.util.Map<String, Object> data = new java.util.HashMap<>();
+    private void handleLoginGet(HttpExchange exchange) throws IOException {
+        Map<String, Object> data = new HashMap<>();
         data.put("error", "");
         server.renderTemplate(exchange, "login.ftl", data);
     }
 
-    private void handleLoginPost(com.sun.net.httpserver.HttpExchange exchange) throws java.io.IOException {
-        java.util.Map<String, String> form = server.getFormData(exchange);
+    private void handleLoginPost(HttpExchange exchange) throws IOException {
+        Map<String, String> form = server.getFormData(exchange);
 
         String identifier = form.get("identifier");
         String password = form.get("password");
 
-        var user = libraryService.login(identifier, password);
+        Employee user = libraryService.login(identifier, password);
 
         if (user == null) {
-            java.util.Map<String, Object> data = new java.util.HashMap<>();
+            Map<String, Object> data = new HashMap<>();
             data.put("error", "User does not exist or wrong password");
             server.renderTemplate(exchange, "login.ftl", data);
             return;
         }
 
-        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        String sessionId = libraryService.createSession(user);
+        server.setCookie(exchange, SESSION_COOKIE, sessionId, 600, true);
+
+        Map<String, Object> data = new HashMap<>();
         data.put("user", user);
         server.renderTemplate(exchange, "profile.ftl", data);
     }
 
-    private void handleProfileGet(com.sun.net.httpserver.HttpExchange exchange) throws java.io.IOException {
-        var user = libraryService.getLastLoggedInUser();
+    private void handleProfileGet(HttpExchange exchange) throws IOException {
+        String sessionId = server.getCookie(exchange, SESSION_COOKIE);
+        Employee user = libraryService.getUserBySession(sessionId);
 
-        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        Map<String, Object> data = new HashMap<>();
         if (user == null) {
-            data.put("user", new kg.attractor.java.model.Employee(0, "unknown@user", "Some user", ""));
+            data.put("user", new Employee(0, "unknown@user", "Some user", ""));
         } else {
             data.put("user", user);
         }
         server.renderTemplate(exchange, "profile.ftl", data);
     }
 
+    private String getQueryParam(HttpExchange exchange, String name) {
+        String query = exchange.getRequestURI().getQuery();
+        if (query == null || query.isEmpty()) return null;
+
+        String[] parts = query.split("&");
+        for (String part : parts) {
+            String[] kv = part.split("=", 2);
+            if (kv.length == 2 && kv[0].equals(name)) return kv[1];
+        }
+        return null;
+    }
 }

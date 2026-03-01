@@ -184,4 +184,29 @@ public class BaseServer {
         }
     }
 
+    public String getCookie(com.sun.net.httpserver.HttpExchange exchange, String name) {
+        var headers = exchange.getRequestHeaders().get("Cookie");
+        if (headers == null) return null;
+
+        for (String header : headers) {
+            String[] parts = header.split(";");
+            for (String part : parts) {
+                String[] kv = part.trim().split("=", 2);
+                if (kv.length == 2 && kv[0].equals(name)) return kv[1];
+            }
+        }
+        return null;
+    }
+
+    public void setCookie(com.sun.net.httpserver.HttpExchange exchange, String name, String value, int maxAgeSeconds, boolean httpOnly) {
+        String cookie = name + "=" + value + "; Max-Age=" + maxAgeSeconds + "; Path=/";
+        if (httpOnly) cookie += "; HttpOnly";
+        exchange.getResponseHeaders().add("Set-Cookie", cookie);
+    }
+
+    public void deleteCookie(com.sun.net.httpserver.HttpExchange exchange, String name) {
+        String cookie = name + "=; Max-Age=0; Path=/; HttpOnly";
+        exchange.getResponseHeaders().add("Set-Cookie", cookie);
+    }
+
 }

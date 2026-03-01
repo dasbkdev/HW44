@@ -2,7 +2,9 @@ package kg.attractor.java.service;
 
 import kg.attractor.java.model.Book;
 import kg.attractor.java.model.Employee;
-
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,6 +16,7 @@ public class LibraryService {
     private final List<Employee> employees;
     private final List<Book> books;
     private kg.attractor.java.model.Employee lastLoggedInUser;
+    private final Map<String, Employee> sessions = new HashMap<>();
 
     public LibraryService() {
         employees = new ArrayList<>();
@@ -83,6 +86,22 @@ public class LibraryService {
 
     public kg.attractor.java.model.Employee getLastLoggedInUser() {
         return lastLoggedInUser;
+    }
+
+    public String createSession(Employee user) {
+        String sessionId = UUID.randomUUID().toString();
+        sessions.put(sessionId, user);
+        return sessionId;
+    }
+
+    public Employee getUserBySession(String sessionId) {
+        if (sessionId == null) return null;
+        return sessions.get(sessionId);
+    }
+
+    public void removeSession(String sessionId) {
+        if (sessionId == null) return;
+        sessions.remove(sessionId);
     }
 
 }
