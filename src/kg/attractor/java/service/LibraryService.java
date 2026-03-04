@@ -2,21 +2,27 @@ package kg.attractor.java.service;
 
 import kg.attractor.java.model.Book;
 import kg.attractor.java.model.Employee;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class LibraryService {
 
-    private final java.util.List<kg.attractor.java.model.Employee> users = new java.util.ArrayList<>();
+    private final List<Employee> users = new ArrayList<>();
     private int nextUserId = 1;
+
     private final List<Employee> employees;
     private final List<Book> books;
-    private kg.attractor.java.model.Employee lastLoggedInUser;
+
+    private Employee lastLoggedInUser;
     private final Map<String, Employee> sessions = new HashMap<>();
+
+    private final Map<Integer, List<Integer>> userCurrentBooks = new HashMap<>();
+    private final Map<Integer, List<Integer>> userPastBooks = new HashMap<>();
 
     public LibraryService() {
         employees = new ArrayList<>();
@@ -24,9 +30,9 @@ public class LibraryService {
         employees.add(new Employee(2, "Petr Petrov", Arrays.asList(3), Arrays.asList()));
 
         books = new ArrayList<>();
-        books.add(new Book(1, "Java Basics", "James Gosling", "images/1.jpg", "available", null));
-        books.add(new Book(2, "Clean Code", "Robert Martin", "images/1.jpg", "issued", 1));
-        books.add(new Book(3, "Effective Java", "Joshua Bloch", "images/1.jpg", "issued", 2));
+        books.add(new Book(1, "Java Basics", "James Gosling", "Java language basics for beginners.", "images/1.jpg", "available", null));
+        books.add(new Book(2, "Clean Code", "Robert Martin", "A handbook of agile software craftsmanship.", "images/1.jpg", "issued", 1));
+        books.add(new Book(3, "Effective Java", "Joshua Bloch", "Best practices for the Java platform.", "images/1.jpg", "issued", 2));
     }
 
     public List<Book> getBooks() {
@@ -56,6 +62,9 @@ public class LibraryService {
         for (Employee employee : employees) {
             if (employee.getId() == id) return employee.getFullName();
         }
+        for (Employee user : users) {
+            if (user.getId() == id) return user.getFullName();
+        }
         return "";
     }
 
@@ -64,18 +73,23 @@ public class LibraryService {
         if (fullName == null || fullName.isEmpty()) return false;
         if (password == null || password.isEmpty()) return false;
 
-        for (kg.attractor.java.model.Employee user : users) {
+        for (Employee user : users) {
             if (identifier.equalsIgnoreCase(user.getIdentifier())) return false;
         }
 
-        users.add(new kg.attractor.java.model.Employee(nextUserId++, identifier, fullName, password));
+        Employee user = new Employee(nextUserId++, identifier, fullName, password);
+        users.add(user);
+
+        userCurrentBooks.put(user.getId(), new ArrayList<>());
+        userPastBooks.put(user.getId(), new ArrayList<>());
+
         return true;
     }
 
-    public kg.attractor.java.model.Employee login(String identifier, String password) {
+    public Employee login(String identifier, String password) {
         if (identifier == null || password == null) return null;
 
-        for (kg.attractor.java.model.Employee user : users) {
+        for (Employee user : users) {
             if (identifier.equalsIgnoreCase(user.getIdentifier()) && password.equals(user.getPassword())) {
                 lastLoggedInUser = user;
                 return user;
@@ -84,7 +98,7 @@ public class LibraryService {
         return null;
     }
 
-    public kg.attractor.java.model.Employee getLastLoggedInUser() {
+    public Employee getLastLoggedInUser() {
         return lastLoggedInUser;
     }
 
@@ -123,6 +137,16 @@ public class LibraryService {
 
         book.setIssuedToEmployeeId(userId);
         book.setStatus("issued");
+
+        userCurrentBooks.putIfAbsent(userId, new ArrayList<>());
+        userPastBooks.putIfAbsent(userId, new ArrayList<>());
+
+        List<Integer> current = userCurrentBooks.get(userId);
+        if (!current.contains(bookId)) current.add(bookId);
+
+        List<Integer> past = userPastBooks.get(userId);
+        if (!past.contains(bookId)) past.add(bookId);
+
         return true;
     }
 
@@ -136,7 +160,41 @@ public class LibraryService {
 
         book.setIssuedToEmployeeId(null);
         book.setStatus("available");
+
+        List<Integer> current = userCurrentBooks.get(userId);
+        if (current != null) current.remove((Integer) bookId);
+
         return true;
     }
 
+    public List<Book> getCurrentBooksForUser(int userId) {
+        List<Integer> ids = userCurrentBooks.get(userId);
+        List<Book> result = new ArrayList<>();
+        if (ids == null) return result;
+
+        for (Integer id : ids) {
+            Book book = getBookById(id);
+            if (book != null) result.add(book);
+        }
+        return result;
+    }
+
+    public List<Book> getPastBooksForUser(int userId) {
+        List<Integer> ids = userPastBooks.get(userId);
+        List<Book> result = new ArrayList<>();
+        if (ids == null) return result;
+
+        for (Integer id : ids) {
+            Book book = getBookById(id);
+            if (book != null) result.add(book);
+        }
+        return result;
+    }
+
+    public boolean isUserRegistered(int userId) {
+        for (Employee user : users) {
+            if (user.getId() == userId) return true;
+        }
+        return false;
+    }
 }

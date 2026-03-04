@@ -1,25 +1,35 @@
 <html>
 <head>
-    <title>Book</title>
-    <link rel="stylesheet" href="/css/freemarker.css">
+<title>Book</title>
+<link rel="stylesheet" href="/css/freemarker.css">
 </head>
 <body>
 
-<#if book??>
-    <h1>${book.title}</h1>
-    <p>Author: ${book.author}</p>
-    <p>Status: ${book.status}</p>
+<h1>${book.title}</h1>
 
-    <#if book.issuedToEmployeeId??>
-        <p>Issued to: ${library.getEmployeeNameById(book.issuedToEmployeeId)}</p>
-    </#if>
+<h3>Author: ${book.author}</h3>
 
-    <img src="/${book.image}" width="200">
+<img src="${book.image}" width="200"/>
+
+<p>${book.description}</p>
+
+<#if book.issuedToEmployeeId??>
+<p>Issued</p>
 <#else>
-    <h1>Book not found</h1>
+<p>Available</p>
 </#if>
 
-<p><a href="/books">Back</a></p>
+<p>
+<a href="/issue?id=${book.id}">Take book</a>
+</p>
+
+<p>
+<a href="/return?id=${book.id}">Return book</a>
+</p>
+
+<p>
+<a href="/books">Back</a>
+</p>
 
 </body>
 </html>
