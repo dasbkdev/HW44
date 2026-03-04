@@ -28,11 +28,10 @@ public class Lesson44Server {
     private void registerRoutes() {
         server.registerGet("/books", this::handleBooks);
         server.registerGet("/book", this::handleBook);
-        server.registerGet("/issue", this::handleIssueGet);
-        server.registerGet("/return", this::handleReturnGet);
+
         server.registerGet("/employees", this::handleEmployees);
         server.registerGet("/employee", this::handleEmployee);
-        server.registerGet("/logout", this::handleLogoutGet);
+
         server.registerGet("/register", this::handleRegisterGet);
         server.registerPost("/register", this::handleRegisterPost);
 
@@ -40,6 +39,11 @@ public class Lesson44Server {
         server.registerPost("/login", this::handleLoginPost);
 
         server.registerGet("/profile", this::handleProfileGet);
+
+        server.registerGet("/issue", this::handleIssueGet);
+        server.registerGet("/return", this::handleReturnGet);
+
+        server.registerGet("/logout", this::handleLogoutGet);
     }
 
     private void handleBooks(HttpExchange exchange) throws IOException {
@@ -125,37 +129,24 @@ public class Lesson44Server {
 
         Map<String, Object> data = new HashMap<>();
         data.put("user", user);
+        data.put("currentBooks", libraryService.getCurrentBooksForUser(user.getId()));
+        data.put("pastBooks", libraryService.getPastBooksForUser(user.getId()));
         server.renderTemplate(exchange, "profile.ftl", data);
     }
 
     private void handleProfileGet(HttpExchange exchange) throws IOException {
-        String sessionId = server.getCookie(exchange, SESSION_COOKIE);
-        Employee user = libraryService.getUserBySession(sessionId);
+        Employee user = getAuthorizedUser(exchange);
+        if (user == null) {
+            Map<String, Object> data = new HashMap<>();
+            server.renderTemplate(exchange, "auth_required.ftl", data);
+            return;
+        }
 
         Map<String, Object> data = new HashMap<>();
-        if (user == null) {
-            data.put("user", new Employee(0, "unknown@user", "Some user", ""));
-        } else {
-            data.put("user", user);
-        }
+        data.put("user", user);
+        data.put("currentBooks", libraryService.getCurrentBooksForUser(user.getId()));
+        data.put("pastBooks", libraryService.getPastBooksForUser(user.getId()));
         server.renderTemplate(exchange, "profile.ftl", data);
-    }
-
-    private String getQueryParam(HttpExchange exchange, String name) {
-        String query = exchange.getRequestURI().getQuery();
-        if (query == null || query.isEmpty()) return null;
-
-        String[] parts = query.split("&");
-        for (String part : parts) {
-            String[] kv = part.split("=", 2);
-            if (kv.length == 2 && kv[0].equals(name)) return kv[1];
-        }
-        return null;
-    }
-
-    private Employee getAuthorizedUser(HttpExchange exchange) {
-        String sessionId = server.getCookie(exchange, SESSION_COOKIE);
-        return libraryService.getUserBySession(sessionId);
     }
 
     private void handleIssueGet(HttpExchange exchange) throws IOException {
@@ -199,11 +190,27 @@ public class Lesson44Server {
 
     private void handleLogoutGet(HttpExchange exchange) throws IOException {
         String sessionId = server.getCookie(exchange, SESSION_COOKIE);
-
         libraryService.removeSession(sessionId);
         server.deleteCookie(exchange, SESSION_COOKIE);
 
         Map<String, Object> data = new HashMap<>();
         server.renderTemplate(exchange, "logout.ftl", data);
+    }
+
+    private Employee getAuthorizedUser(HttpExchange exchange) {
+        String sessionId = server.getCookie(exchange, SESSION_COOKIE);
+        return libraryService.getUserBySession(sessionId);
+    }
+
+    private String getQueryParam(HttpExchange exchange, String name) {
+        String query = exchange.getRequestURI().getQuery();
+        if (query == null || query.isEmpty()) return null;
+
+        String[] parts = query.split("&");
+        for (String part : parts) {
+            String[] kv = part.split("=", 2);
+            if (kv.length == 2 && kv[0].equals(name)) return kv[1];
+        }
+        return null;
     }
 }
